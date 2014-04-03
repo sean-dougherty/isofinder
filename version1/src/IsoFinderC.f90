@@ -338,7 +338,7 @@ SUBROUTINE filterout(adn,ini,fin,wsize,mu,nsigma2,rnwin)
    sx2=0.d0
    do i=1,nwin
      x=0.d0
-     do j=(i-1)*wsize,i*wsize
+     do j=(i-1)*wsize,i*wsize-1
        if (adn(ini+j)==1) x=x+1
      enddo
      sx=sx+x
@@ -374,7 +374,7 @@ function random_ttest(adn,p,p_corte,wsize,t0,idum)
    n1=size/wsize
    do i=1,n1
      x=0.d0
-     do j=(i-1)*wsize,i*wsize
+     do j=(i-1)*wsize,i*wsize-1
        if (adn(ini+j)==1) x=x+1
      enddo
      gc(i)=x/(wsize)
@@ -387,7 +387,7 @@ function random_ttest(adn,p,p_corte,wsize,t0,idum)
    n=n1+n2
    do i=1,n2
      x=0.d0
-     do j=(i-1)*wsize,i*wsize
+     do j=(i-1)*wsize,i*wsize-1
        if (adn(ini+j)==1) x=x+1
      enddo
      gc(i+n1)=x/(wsize)
