@@ -73,9 +73,6 @@ void tstudent_split_cuda(gc_sum_t gc_sum,
     best_midpoint = 0;
     best_t = -1.0;
 
-    if( gc_sum.length() < 2*min_size )
-        return;
-
     uint64_t n = (gc_sum.length() - min_size) - (min_size) + 1;
 
     const uint nblocks = (n - 1) / Threads_Per_Block + 1;

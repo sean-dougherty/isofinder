@@ -10,10 +10,10 @@
 #include <math.h>
 #include <stdlib.h>
 
-void tstudent_split_cpu(gc_sum_t gc_sum,
-                        uint64_t min_size,
-                        uint64_t &best_midpoint,
-                        double &best_t) {
+static void tstudent_split_cpu(gc_sum_t gc_sum,
+                               uint64_t min_size,
+                               uint64_t &best_midpoint,
+                               double &best_t) {
     best_midpoint = 0;
     best_t = -1;
 
@@ -65,11 +65,18 @@ bool find_best_split_candidate(const cut_t cut,
 
     const uint64_t  Minimum_Cut_Size = 10 * window_length + 2 + 2; // todo: fortran effectively uses 2 more as min
 
+    if( cut.length() < 2*Minimum_Cut_Size )
+        return false;
+
     {
         uint64_t best_midpoint;
         double best_t = -1;
 
-        tstudent_split_cuda(cut.gc_sum, Minimum_Cut_Size, best_midpoint, best_t);
+        if(cut.length() < 5000) {
+            tstudent_split_cpu(cut.gc_sum, Minimum_Cut_Size, best_midpoint, best_t);
+        } else {
+            tstudent_split_cuda(cut.gc_sum, Minimum_Cut_Size, best_midpoint, best_t);
+        }
 
         if(best_t < 0.0) {
             return false;
