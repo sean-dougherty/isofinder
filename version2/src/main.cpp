@@ -28,48 +28,20 @@
 
 using namespace std;
 
-void dump_analysis_parameters(shared_ptr<seq_t> sequence,
+void dump_analysis_parameters(seq_t &sequence,
                               const list<cut_t> &cuts,
                               double significance_level,
                               split_significance_method_t significance_method,
                               uint16_t window_length) {
     cout << "==================================================================" << endl;
-    cout << "DNA file:                " << sequence->origin << endl;
-    cout << "Length:                  " << sequence->len << endl;
-    //cout << "G+C (%):                 " << float(base_frequency[base_frequency_t::GC]) / (sequence->len - n_frequency) * 100 << endl;
-    //cout << "Undefined:               " << n_frequency << " (" << float(n_frequency) / sequence->len * 100 << "%)" << endl;
+    cout << "DNA file:                " << sequence.origin << endl;
+    cout << "Length:                  " << sequence.len << endl;
+    //cout << "G+C (%):                 " << float(base_frequency[base_frequency_t::GC]) / (sequence.len - n_frequency) * 100 << endl;
+    //cout << "Undefined:               " << n_frequency << " (" << float(n_frequency) / sequence.len * 100 << "%)" << endl;
     cout << "Sig. Level:              " << significance_level << endl;
     cout << "Method:                  " << name_of(significance_method) << endl;
     cout << "Coarse-graining level:   " << window_length << endl;
     cout << "==================================================================" << endl;
-}
-
-void create_gc_sum(shared_ptr<seq_t> sequence, cut_t &cut) {
-    uint64_t *cumsum = new uint64_t[cut.length() + 1];
-    cumsum[0] = 0;
-    cumsum++;
-
-    uint64_t sum = 0;
-    for(uint64_t i = 0; i < cut.length(); i++) {
-        char base = sequence->bases[cut.begin+i];
-        if( (base == 'G') || (base == 'C') )
-            sum++;
-        cumsum[i] = sum;
-    }
-
-    gc_sum_t &result = cut.gc_sum;
-    result.cumsum = cumsum;
-    result.begin = 0;
-    result.end = cut.length();
-    result.sum_begin = 0;
-    result.sum_end = sum;
-
-    result.gpu_alloc();
-}
-
-void dispose_gc_sum(cut_t cut) {
-    delete [] (cut.gc_sum.cumsum - 1);
-    cut.gc_sum.gpu_dispose();
 }
 
 class find_split_context_t {
@@ -136,7 +108,7 @@ vector<cut_t> __find_isochores(list<cut_t> initial_cuts,
     return processed_cuts;
 }
 
-vector<cut_t> find_isochores(shared_ptr<seq_t> sequence,
+vector<cut_t> find_isochores(seq_t &sequence,
                              double significance_level,
                              split_significance_method_t significance_method,
                              uint16_t window_length) {
@@ -144,7 +116,7 @@ vector<cut_t> find_isochores(shared_ptr<seq_t> sequence,
     dump_analysis_parameters(sequence, initial_cuts, significance_level, significance_method, window_length);
 
     for(auto &cut: initial_cuts) {
-        create_gc_sum(sequence, cut);
+        create_gc_sum(&sequence, &cut);
     }
 
     vector<find_split_context_t> contexts;
@@ -188,7 +160,7 @@ vector<cut_t> find_isochores(shared_ptr<seq_t> sequence,
 */
 
     for(auto &cut: initial_cuts) {
-        dispose_gc_sum(cut);
+        dispose_gc_sum(&cut);
     }
 
     return final_cuts;
@@ -219,11 +191,14 @@ int main(int argc, const char **argv) {
     uint16_t window_length = atoi(argv[argi++]);
     const char *output_path = argv[argi++];
     
+    seq_t sequence = seq_t::read(sequence_path, sequence_index);
 
-    vector<cut_t> cuts = find_isochores( read_seq(sequence_path, sequence_index),
+    vector<cut_t> cuts = find_isochores( sequence,
                                          significance,
                                          significance_method,
                                          window_length);
+
+    sequence.dispose();
 
     write_results(cuts, output_path);
 

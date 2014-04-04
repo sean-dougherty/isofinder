@@ -2,6 +2,7 @@
 #define __host__
 
 #include "split_candidate.h"
+#include "split_candidate.cuh"
 
 #include "gc_sum.h"
 
@@ -9,10 +10,10 @@
 #include <math.h>
 #include <stdlib.h>
 
-void __tstudent_split(gc_sum_t gc_sum,
-                      uint64_t min_size,
-                      uint64_t &best_midpoint,
-                      double &best_t) {
+void tstudent_split_cpu(gc_sum_t gc_sum,
+                        uint64_t min_size,
+                        uint64_t &best_midpoint,
+                        double &best_t) {
     best_midpoint = 0;
     best_t = -1;
 
@@ -68,7 +69,7 @@ bool find_best_split_candidate(const cut_t cut,
         uint64_t best_midpoint;
         double best_t = -1;
 
-        cuda_tstudent_split(cut.gc_sum, Minimum_Cut_Size, best_midpoint, best_t);
+        tstudent_split_cuda(cut.gc_sum, Minimum_Cut_Size, best_midpoint, best_t);
 
         if(best_t < 0.0) {
             return false;

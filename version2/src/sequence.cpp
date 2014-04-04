@@ -7,26 +7,38 @@ using std::make_shared;
 using std::shared_ptr;
 using std::string;
 
+seq_t seq_t::read(const string &path, uint64_t index) {
+    PnaReader in(path.c_str());
+    shared_ptr<PnaSequenceReader> sin = in.openSequence(index);
+    seq_t seq( path, sin->size() );
+    sin->read(seq.bases, seq.len);
+    return seq;
+}
+
 seq_t::seq_t(const string &origin_, uint64_t len_)
     : origin(origin_)
     , len(len_)
     , bases(new char[len_]) {
 }
 
-seq_t::~seq_t() {
+void seq_t::dispose() {
     delete [] bases;
 }
 
-shared_ptr<seq_t> read_seq(const string &path, uint64_t index) {
-    PnaReader in(path.c_str());
-    shared_ptr<PnaSequenceReader> sin = in.openSequence(index);
-    shared_ptr<seq_t> seq = make_shared<seq_t>( path, sin->size() );
-    sin->read(seq->bases, seq->len);
-    return seq;
+bool seq_t::is_gc(uint64_t index) {
+    char base = bases[index];
+
+    return (base == 'G') || (base == 'C');
 }
 
-char random_base() {
-    static char bases[] = {'A', 'T', 'C', 'G'};
+bool seq_t::is_n(uint64_t index) {
+    char base = bases[index];
 
-    return bases[int(drand48() * 4) % 4];
+    return (base == 'N');
+}
+
+void seq_t::set_random_base(uint64_t index) {
+    static char Bases[] = {'A', 'T', 'C', 'G'};
+
+    bases[index] = Bases[int(drand48() * 4) % 4];
 }
