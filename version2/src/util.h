@@ -27,6 +27,8 @@
 #define clx(expr) {cl_int __err = expr; if(__err != CL_SUCCESS) {std::cerr << #expr << " = " << __err << std::endl; exit(1);}}
 #endif
 
+#define square(x) ((x)*(x))
+
 bool equals(float a, float b, float epsilon);
 
 std::vector<std::string> split(const std::string &str,
