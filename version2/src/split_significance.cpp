@@ -3,7 +3,7 @@
 
 #include "split_significance.h"
 
-#include "isofinder.cuh"
+#include "split_significance.cuh"
 #include "sequence.h"
 #include "util.h"
 
@@ -70,7 +70,7 @@ static double prob(double x, double n) {
     }
 }
 
-static double random_ttest(cuda_random::TTestState &ttest,
+static double ttest_random(cuda_random::TTestState &ttest,
                            cuda_random::GpuState &gpu,
                            cut_t left_cut,
                            cut_t right_cut,
@@ -140,7 +140,7 @@ bool is_split_significant(const split_candidate_t &candidate,
         cuda_random::TTestState ttest;
         cuda_random::GpuState gpu(0);
 
-        p = random_ttest(ttest,
+        p = ttest_random(ttest,
                          gpu,
                          candidate.left.cut,
                          candidate.right.cut,

@@ -2,9 +2,9 @@
 #define __device__
 
 #include "cut.h"
-#include "isofinder.cuh"
 #include "queue.h"
 #include "split_candidate.h"
+#include "split_significance.cuh"
 #include "split_significance.h"
 #include "unit_tests.h"
 #include "util.h"
