@@ -20,33 +20,39 @@ __global__ void tstudent(gc_sum_t gc_sum,
                          uint64_t n,
                          double *ts,
                          uint64_t *is) {
-    uint i = (blockDim.x * blockIdx.x) + threadIdx.x;
-    int tid = threadIdx.x;
+    double best_t = -1.0;
+    uint64_t best_i;
+
+    for(uint64_t i = (blockDim.x * blockIdx.x) + threadIdx.x;
+        i < n;
+        i += gridDim.x * blockDim.x) {
+
+        uint64_t midpoint = min_size + i;
+        double n1 = midpoint;
+        double n2 = gc_sum.length() - midpoint;
+        double mu1 = gc_sum.get(midpoint - 1) / n1;
+        double mu2 = gc_sum.get_reverse(midpoint) / n2;
+        double sd = (mu1*(1-mu1)+mu2*(1-mu2))*(1/n1+1/n2)/(n1+n2-2);
+        double t;
+        if(sd <= 0) {
+            t = -1;
+        } else {
+            sd = sqrt(sd);
+            t = abs(mu1 - mu2) / sd;
+
+            if(t > best_t) {
+                best_t = t;
+                best_i = i;
+            }
+        }
+    }
+
     __shared__ double ts_shared[Threads_Per_Block];
-    __shared__ int is_shared[Threads_Per_Block];
+    __shared__ uint64_t is_shared[Threads_Per_Block];
 
-    ts_shared[tid] = -1.0;
-    is_shared[tid] = tid;
-
-    if(i >= n) {
-        return;
-    }
-
-    uint64_t midpoint = min_size + i;
-    double n1 = midpoint;
-    double n2 = gc_sum.length() - midpoint;
-    double mu1 = gc_sum.get(midpoint - 1) / n1;
-    double mu2 = gc_sum.get_reverse(midpoint) / n2;
-    double sd = (mu1*(1-mu1)+mu2*(1-mu2))*(1/n1+1/n2)/(n1+n2-2);
-    double t;
-    if(sd <= 0) {
-        t = -1;
-    } else {
-        sd = sqrt(sd);
-        t = abs(mu1 - mu2) / sd;
-    }
-
-    ts_shared[tid] = t;
+    int tid = threadIdx.x;
+    ts_shared[tid] = best_t;
+    is_shared[tid] = best_i;
 
     for(int stride = Threads_Per_Block / 2; stride > 0; stride >>= 1) {
         __syncthreads();
@@ -61,7 +67,7 @@ __global__ void tstudent(gc_sum_t gc_sum,
 
     if(tid == 0) {
         ts[blockIdx.x] = ts_shared[0];
-        is[blockIdx.x] = blockDim.x * blockIdx.x + is_shared[0];
+        is[blockIdx.x] = is_shared[0];
     }
 
 }
@@ -75,7 +81,9 @@ void tstudent_split_cuda(gc_sum_t gc_sum,
 
     uint64_t n = (gc_sum.length() - min_size) - (min_size) + 1;
 
-    const uint nblocks = (n - 1) / Threads_Per_Block + 1;
+    uint64_t nblocks = (n - 1) / Threads_Per_Block + 1;
+    if(nblocks > 2048)
+        nblocks = 2048;
 
     double *ts = new double[nblocks];
     double *gpu_ts;
@@ -84,7 +92,7 @@ void tstudent_split_cuda(gc_sum_t gc_sum,
 
     xcuda( cudaMalloc((void**)&gpu_ts, nblocks*sizeof(double)) );
     xcuda( cudaMalloc((void**)&gpu_is, nblocks*sizeof(uint64_t)) );
-    
+
     tstudent<<<nblocks, Threads_Per_Block>>>(gc_sum.gpu_copy(),
                                              min_size,
                                              n,
