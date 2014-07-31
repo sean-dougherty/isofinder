@@ -23,3 +23,6 @@ bld/cuda/%.o: src/%.cu Makefile
 clean:
 	rm -rf bld
 	rm -f isofinder
+
+install:
+	cp isofinder /usr/local/bin
