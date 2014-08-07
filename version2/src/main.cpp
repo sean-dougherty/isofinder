@@ -46,13 +46,17 @@ vector<cut_t> find_isochores(seq_t &sequence,
                              split_significance_method_t significance_method,
                              uint16_t window_length) {
     list<cut_t> initial_cuts = initialize_cuts(sequence);
-    list<cut_t> cuts = initial_cuts;
     
-    dump_analysis_parameters(sequence, cuts, significance_level, significance_method, window_length);
+    dump_analysis_parameters(sequence,
+                             initial_cuts,
+                             significance_level,
+                             significance_method,
+                             window_length);
 
-    for(auto &cut: cuts) {
+    for(auto &cut: initial_cuts) {
         create_gc_sum(&sequence, &cut);
     }
+    list<cut_t> cuts = initial_cuts;
 
     auto find_split = [sequence, significance_level, significance_method, window_length]
         (cut_t cut, pair<cut_t, cut_t> &result) {
@@ -90,12 +94,10 @@ vector<cut_t> find_isochores(seq_t &sequence,
 
     mark_incomplete_cuts(sequence, cuts);
 
-    cerr << "DISPOSE GC_SUM!!!" << endl;
-/*
     for(auto &cut: initial_cuts) {
         dispose_gc_sum(&cut);
     }
-*/
+
     return vector<cut_t>(cuts.begin(), cuts.end());
 }
 
