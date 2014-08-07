@@ -6,7 +6,6 @@
 #include <assert.h>
 
 using std::list;
-using std::vector;
 
 template<typename cuts_container>
 void dump(cuts_container &cuts, bool onlyN) {
@@ -134,7 +133,7 @@ list<cut_t> initialize_cuts(seq_t &sequence) {
     return cuts;
 }
 
-void mark_incomplete_cuts(seq_t &sequence, vector<cut_t> &cuts) {
+void mark_incomplete_cuts(seq_t &sequence, list<cut_t> &cuts) {
     for(auto cut = cuts.begin(); cut != cuts.end(); ++cut) {
         if(cut->is_n) {
             if(cut->begin != 0) {

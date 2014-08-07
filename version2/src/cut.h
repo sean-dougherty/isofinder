@@ -5,7 +5,6 @@
 
 #include <list>
 #include <stdint.h>
-#include <vector>
 
 class cut_t {
 public:
@@ -24,6 +23,6 @@ public:
 };
 
 std::list<cut_t> initialize_cuts(seq_t &sequence);
-void mark_incomplete_cuts(seq_t &sequence, std::vector<cut_t> &cuts);
+void mark_incomplete_cuts(seq_t &sequence, std::list<cut_t> &cuts);
 void merge_short_N_cuts(seq_t &sequence, std::list<cut_t> &cuts);
 void verify_bounds(seq_t &sequence, std::list<cut_t> &cuts);
