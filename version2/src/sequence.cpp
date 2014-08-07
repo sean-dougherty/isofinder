@@ -1,28 +1,15 @@
 #include "sequence.h"
 
-#include <pna.h>
-
-using namespace seqio;
-using std::make_shared;
-using std::shared_ptr;
 using std::string;
 
-seq_t seq_t::read(const string &path, uint64_t index) {
-    PnaReader in(path.c_str());
-    shared_ptr<PnaSequenceReader> sin = in.openSequence(index);
-    seq_t seq( path, sin->size() );
-    sin->read(seq.bases, seq.len);
-    return seq;
-}
-
-seq_t::seq_t(const string &origin_, uint64_t len_)
+seq_t::seq_t(const string &origin_,
+             const string &name_,
+             char *bases_,
+             uint64_t len_)
     : origin(origin_)
+    , name(name_)
     , len(len_)
-    , bases(new char[len_]) {
-}
-
-void seq_t::dispose() {
-    delete [] bases;
+    , bases(bases_) {
 }
 
 bool seq_t::is_gc(uint64_t index) {

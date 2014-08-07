@@ -25,6 +25,8 @@
 #include <thread>
 #include <vector>
 
+#include <seqio.h>
+
 
 using namespace std;
 
@@ -36,8 +38,6 @@ void dump_analysis_parameters(seq_t &sequence,
     cout << "==================================================================" << endl;
     cout << "DNA file:                " << sequence.origin << endl;
     cout << "Length:                  " << sequence.len << endl;
-    //cout << "G+C (%):                 " << float(base_frequency[base_frequency_t::GC]) / (sequence.len - n_frequency) * 100 << endl;
-    //cout << "Undefined:               " << n_frequency << " (" << float(n_frequency) / sequence.len * 100 << "%)" << endl;
     cout << "Sig. Level:              " << significance_level << endl;
     cout << "Method:                  " << name_of(significance_method) << endl;
     cout << "Coarse-graining level:   " << window_length << endl;
@@ -132,11 +132,6 @@ vector<cut_t> find_isochores(seq_t &sequence,
                 return false;
             }
 
-/*
-            cout << cut.begin << "  " << cut.end << "  " << candidate.left.cut.end << "   "
-            << candidate.left.window_parameters.sigma2 << "  " << candidate.right.window_parameters.sigma2 << "  "
-            << candidate.t_filter << "   " << candidate.left.window_parameters.n << "  " << candidate.right.window_parameters.n;
-*/
             if( is_split_significant(candidate, significance_method, significance_level, window_length) ) {
                 result.first = candidate.left.cut;
                 result.second = candidate.right.cut;
@@ -151,13 +146,6 @@ vector<cut_t> find_isochores(seq_t &sequence,
     vector<cut_t> final_cuts = __find_isochores(initial_cuts, contexts);
 
     mark_incomplete_cuts(sequence, final_cuts);
-
-/*
-    printf("--------------\n");
-    printf("--- Result ---\n");
-    printf("--------------\n");
-    dump(final_cuts, false);
-*/
 
     for(auto &cut: initial_cuts) {
         dispose_gc_sum(&cut);
@@ -174,31 +162,58 @@ void write_results(vector<cut_t> &cuts, const string &path) {
             out << cut.begin << '\t' << cut.end << '\t' << cut.length() << endl;
         }
     }
+
+    out.close();
 }
 
 int main(int argc, const char **argv) {
-    if( (argc > 1) && (0 == strcmp(argv[1], "--ut")) ) {
-        unit_tests::run();
-        return 0;
-    }
-
-    // todo: arg error handling
     int argi = 1;
     const char *sequence_path = argv[argi++];
-    uint64_t sequence_index = atoi(argv[argi++]);
     double significance = atof(argv[argi++]);
     split_significance_method_t significance_method = get_split_significance_method(argv[argi++]);
     uint16_t window_length = atoi(argv[argi++]);
     const char *output_path = argv[argi++];
-    
-    seq_t sequence = seq_t::read(sequence_path, sequence_index);
 
-    vector<cut_t> cuts = find_isochores( sequence,
-                                         significance,
-                                         significance_method,
-                                         window_length);
+    vector<cut_t> cuts;
+    {
+        char *sequence_buffer = nullptr;
+        uint64_t sequence_buffer_length;
+        uint64_t sequence_length;
 
-    sequence.dispose();
+        seqio_sequence_iterator iterator;
+        seqio_sequence_options sequence_options = SEQIO_DEFAULT_SEQUENCE_OPTIONS;
+        sequence_options.base_transform = SEQIO_BASE_TRANSFORM_CAPS_GATCN;
+        seqio_create_sequence_iterator(sequence_path,
+                                       sequence_options,
+                                       &iterator);
+        
+        seqio_sequence sequence;
+        while( (SEQIO_SUCCESS == seqio_next_sequence(iterator, &sequence))
+               && (sequence != nullptr) ) {
+
+            char const *name, *comment;
+            seqio_const_dictionary metadata;
+            seqio_get_metadata(sequence, &metadata);
+            seqio_get_value(metadata, SEQIO_KEY_NAME, &name);
+            seqio_get_value(metadata, SEQIO_KEY_COMMENT, &comment);
+
+            seqio_read_all(sequence, &sequence_buffer, &sequence_buffer_length, &sequence_length);
+
+            seq_t seq(sequence_path, name, sequence_buffer, sequence_length);
+            vector<cut_t> sequence_cuts
+                = find_isochores(seq,
+                                 significance,
+                                 significance_method,
+                                 window_length);
+
+            cuts.insert(cuts.end(), sequence_cuts.begin(), sequence_cuts.end());
+
+            seqio_dispose_sequence(&sequence);
+        }
+
+        seqio_dispose_sequence_iterator(&iterator);
+        seqio_dispose_buffer(&sequence_buffer);
+    }
 
     write_results(cuts, output_path);
 
