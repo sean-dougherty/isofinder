@@ -114,6 +114,13 @@ void write_results(vector<cut_t> &cuts, const string &path) {
 }
 
 int main(int argc, const char **argv) {
+    if(argc == 1) {
+        cerr << "usage: " << argv[0] << " input_path significance (r|p1|p2|p3) window_length output_path" << endl;
+        cerr << endl;
+        cerr << "  example: ./isofinder /genomes/human.pna 0.95 p1 3000 ./human.out" << endl;
+        return 1;
+    }
+
     int argi = 1;
     const char *sequence_path = argv[argi++];
     double significance = atof(argv[argi++]);
