@@ -18,7 +18,6 @@ if [ -z $1 ]; then
     # See if we're on Sean's machine.
     if [ -e /media/student/poly/genome/fa/chr1.fa ]; then
         fastas=$(echo /media/student/poly/genome/fa/chr{{1..22},X,Y}.fa)
-        fastas=$(echo /media/student/poly/genome/fa/chr1.fa)
     else
         echo "usage: $(basename $0) fasta_file..."
         exit 1
