@@ -18,6 +18,7 @@ if [ -z $1 ]; then
     # See if we're on Sean's machine.
     if [ -e /media/student/poly/genome/fa/chr1.fa ]; then
         fastas=$(echo /media/student/poly/genome/fa/chr{{1..22},X,Y}.fa)
+        fastas=$(echo /media/student/poly/genome/fa/chr1.fa)
     else
         echo "usage: $(basename $0) fasta_file..."
         exit 1
@@ -31,21 +32,21 @@ outdir=/tmp/isofinder-compare
 rm -rf $outdir
 mkdir -p $outdir
 
+# version 1
 (
-    cd version1
     for fasta in $fastas; do
         out=$outdir/$(basename $fasta).v1
-        ./isofinder $fasta $significance $method $winlen $out
+        version1/isofinder $fasta $significance $method $winlen $out
         bounds=${out}.bounds
         cat $out | awk '{print $2 " " $3 " " $9}' > $bounds
     done
 )
 
+# version 2
 (
-    cd version2
     for fasta in $fastas; do
         out=$outdir/$(basename $fasta).v2
-        ./isofinder $fasta $significance $method $winlen $out
+        version2/isofinder $fasta $significance $method $winlen $out
         bounds=${out}.bounds
         cat $out | awk '{print $1 " " $2 " " $3}' > $bounds
     done
