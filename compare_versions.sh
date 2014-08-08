@@ -1,6 +1,11 @@
 #!/bin/bash
 
+#
 # This script will run both versions of isofinder and compare their output.
+#
+# Warning! Version 1 can only process uncompressed FASTA. Also, please only
+#          use one sequence per FASTA.
+#
 
 set -e
 
